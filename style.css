@@ -1,0 +1,32 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f9f9f9;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container {
+    max-width: 500px;
+    margin: 60px auto;
+    background: #fff;
+    border-radius: 8px;
+    padding: 40px 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.11);
+    text-align: center;
+  }
+  
+  button {
+    background: #185adb;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 5px;
+    margin-top: 16px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background: #0a1931;
+  }
+  

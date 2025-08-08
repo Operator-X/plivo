@@ -1,11 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 
+import { Configuration, OpenAIApi } from 'openai';
+
+
 import { 
   uploadAudio, 
   requestTranscription, 
   getTranscriptionResult 
 } from '../services/sttService';
+
+
+const configuration = new Configuration({
+    apiKey: process.env.REACT_APP_OPENAI_API_KEY,
+  });
+  
+  const openai = new OpenAIApi(configuration);
+  
+  
 
 function PlaygroundPage() {
   const { user, logout } = useAuth();
@@ -17,7 +29,7 @@ function PlaygroundPage() {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState(null);
 
-  // Image Analysis states for Step 4.1 and 4.2
+  // Image Analysis states for OpenAI integration
   const [imageFile, setImageFile] = useState(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
   const [imageDescription, setImageDescription] = useState('');
@@ -83,11 +95,62 @@ function PlaygroundPage() {
       const file = e.target.files[0];
       setImageFile(file);
       setImagePreviewUrl(URL.createObjectURL(file));
+      setImageDescription('');
+      setImageError(null);
     } else {
       setImageFile(null);
       setImagePreviewUrl(null);
+      setImageDescription('');
+      setImageError(null);
     }
   };
+
+  const getBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Strips prefix for base64 only
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleProcessImage = async () => {
+    if (!imageFile) return;
+  
+    setImageProcessing(true);
+    setImageDescription('');
+    setImageError(null);
+  
+    try {
+      const base64Image = await getBase64(imageFile);
+  
+      const promptMessage = [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that describes images in detail.'
+        },
+        {
+          role: 'user',
+          content: `Please provide a detailed description of the following image: data:image/png;base64,${base64Image}`
+        }
+      ];
+  
+      const response = await openai.createChatCompletion({
+        model: 'gpt-4o-mini', // Replace with your actual GPT-4 Vision model if different
+        messages: promptMessage,
+        max_tokens: 200,
+      });
+  
+      const description = response.data.choices[0]?.message?.content || 'No description available.';
+      setImageDescription(description);
+    } catch (err) {
+      setImageError(err.message || 'Error generating image description');
+    } finally {
+      setImageProcessing(false);
+    }
+  };
+  
+    
 
   // Simple Diarization Logic: Split transcript into sentences, alternate speakers
   const performSimpleDiarization = (text) => {
@@ -171,7 +234,7 @@ function PlaygroundPage() {
         );
       case 'Image Analysis':
         return (
-          <div>
+        <div>
             <h3>Image Analysis</h3>
             <input
                 type="file"
@@ -188,6 +251,13 @@ function PlaygroundPage() {
                 />
                 <p><strong>Filename:</strong> {imageFile.name}</p>
                 <p><strong>Size:</strong> {(imageFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                <button
+                    onClick={handleProcessImage}
+                    disabled={imageProcessing}
+                    style={{ padding: '8px 16px' }}
+                >
+                    {imageProcessing ? 'Generating Description...' : 'Generate Description'}
+                </button>
                 </div>
             )}
             {imageError && (
@@ -203,6 +273,7 @@ function PlaygroundPage() {
             )}
           </div>
         );
+          
           
           
       case 'Document Summarization':

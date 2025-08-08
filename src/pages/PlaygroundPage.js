@@ -17,66 +17,100 @@ function PlaygroundPage() {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState(null);
 
-  // Polling interval reference so we can clear it later
+  // Diarized transcript array: [{speaker:1 or 2, text: string}]
+  const [diarizedTranscript, setDiarizedTranscript] = useState([]);
+
   const pollingInterval = useRef(null);
 
   const handleAudioChange = (e) => {
     if (e.target.files.length > 0) {
       setAudioFile(e.target.files[0]);
       setTranscript('');
+      setDiarizedTranscript([]);
       setError(null);
     }
   };
 
-  // Function to process audio: upload -> request transcription -> poll results
   const handleProcessAudio = async () => {
     if (!audioFile) return;
 
     setProcessing(true);
     setTranscript('');
+    setDiarizedTranscript([]);
     setError(null);
 
     try {
-      // Step 1: Upload audio
       const uploadUrl = await uploadAudio(audioFile);
-
-      // Step 2: Request transcription
       const transcriptId = await requestTranscription(uploadUrl);
 
-      // Step 3: Poll transcription result until complete or failed
       pollingInterval.current = setInterval(async () => {
         try {
           const result = await getTranscriptionResult(transcriptId);
 
           if (result.status === 'completed') {
             clearInterval(pollingInterval.current);
-            setTranscript(result.text || 'No transcript available.');
+            const fullText = result.text || '';
+            setTranscript(fullText);
+            const diarized = performSimpleDiarization(fullText);
+            setDiarizedTranscript(diarized);
             setProcessing(false);
           } else if (result.status === 'error') {
             clearInterval(pollingInterval.current);
             setError('Transcription failed: ' + result.error);
             setProcessing(false);
           }
-          // else status == queued or processing, do nothing and keep polling
         } catch (pollError) {
           clearInterval(pollingInterval.current);
           setError('Error polling transcription result: ' + pollError.message);
           setProcessing(false);
         }
-      }, 3000); // Poll every 3 seconds
-
+      }, 3000);
     } catch (e) {
       setError('Error during transcription process: ' + e.message);
       setProcessing(false);
     }
   };
 
-  // Clear polling when skill changes or component unmounts
+  // Simple Diarization Logic: Split transcript into sentences, alternate speakers
+  const performSimpleDiarization = (text) => {
+    if (!text) return [];
+
+    // Split text into sentences using period, exclamation, question marks as delimiters
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+
+    // Alternate speakers between sentences
+    let speaker = 1;
+    const diarized = sentences.map(sentence => {
+      const entry = { speaker, text: sentence.trim() };
+      speaker = speaker === 1 ? 2 : 1; // alternate speaker
+      return entry;
+    });
+
+    return diarized;
+  };
+
   useEffect(() => {
     return () => {
       if (pollingInterval.current) clearInterval(pollingInterval.current);
     };
   }, []);
+
+  const renderDiarizedTranscript = () => {
+    if (diarizedTranscript.length === 0) return <p>No diarized transcript yet.</p>;
+
+    return (
+      <div style={{ marginTop: 20 }}>
+        <h4>Diarized Transcript</h4>
+        {diarizedTranscript.map((segment, idx) => (
+          <p key={idx} style={{ marginBottom: '12px' }}>
+            <strong style={{ color: segment.speaker === 1 ? 'blue' : 'green' }}>
+              Speaker {segment.speaker}:
+            </strong> {segment.text}
+          </p>
+        ))}
+      </div>
+    );
+  };
 
   const renderSkillSection = () => {
     switch (selectedSkill) {
@@ -110,10 +144,11 @@ function PlaygroundPage() {
             )}
             {transcript && (
               <div style={{ marginTop: '20px' }}>
-                <h4>Transcript</h4>
+                <h4>Full Transcript</h4>
                 <p style={{ whiteSpace: 'pre-wrap' }}>{transcript}</p>
               </div>
             )}
+            {renderDiarizedTranscript()}
           </div>
         );
       case 'Image Analysis':
@@ -135,11 +170,11 @@ function PlaygroundPage() {
     }
   };
 
-  // Reset audio & transcript state when changing skill
   const handleSkillChange = (e) => {
     setSelectedSkill(e.target.value);
     setAudioFile(null);
     setTranscript('');
+    setDiarizedTranscript([]);
     setError(null);
     setProcessing(false);
     if (pollingInterval.current) clearInterval(pollingInterval.current);

@@ -17,9 +17,12 @@ function PlaygroundPage() {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState(null);
 
-  // Image Analysis states for Step 4.1 (UI for upload and preview)
+  // Image Analysis states for Step 4.1 and 4.2
   const [imageFile, setImageFile] = useState(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+  const [imageDescription, setImageDescription] = useState('');
+  const [imageProcessing, setImageProcessing] = useState(false);
+  const [imageError, setImageError] = useState(null);
 
   // Diarized transcript array: [{speaker:1 or 2, text: string}]
   const [diarizedTranscript, setDiarizedTranscript] = useState([]);
@@ -174,10 +177,10 @@ function PlaygroundPage() {
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
+                disabled={imageProcessing}
             />
             {imageFile && (
-              <div style={{ marginTop: '10px' }}>
-                {/* Image preview */}
+                <div style={{ marginTop: '10px' }}>
                 <img
                     src={imagePreviewUrl}
                     alt="Uploaded preview"
@@ -185,10 +188,22 @@ function PlaygroundPage() {
                 />
                 <p><strong>Filename:</strong> {imageFile.name}</p>
                 <p><strong>Size:</strong> {(imageFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-              </div>
+                </div>
+            )}
+            {imageError && (
+                <p style={{ color: 'red', marginTop: '20px' }}>
+                {imageError}
+                </p>
+            )}
+            {imageDescription && (
+                <div style={{ marginTop: '20px' }}>
+                <h4>Image Description</h4>
+                <p>{imageDescription}</p>
+                </div>
             )}
           </div>
         );
+          
           
       case 'Document Summarization':
         return (
@@ -213,6 +228,10 @@ function PlaygroundPage() {
 
     setImageFile(null);
     setImagePreviewUrl(null);
+    setImageDescription('');
+    setImageError(null);
+    setImageProcessing(false);
+    
 
   };
 

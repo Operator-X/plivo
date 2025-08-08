@@ -4,16 +4,34 @@ import { useAuth } from '../context/AuthContext';
 function PlaygroundPage() {
   const { user, logout } = useAuth();
   const [selectedSkill, setSelectedSkill] = useState('');
+  
+  // State for audio file in Conversation Analysis
+  const [audioFile, setAudioFile] = useState(null);
 
-  // Placeholder components for each skill
+  const handleAudioChange = (e) => {
+    if (e.target.files.length > 0) {
+      setAudioFile(e.target.files[0]);
+    }
+  };
+
   const renderSkillSection = () => {
     switch (selectedSkill) {
       case 'Conversation Analysis':
         return (
           <div>
             <h3>Conversation Analysis</h3>
-            <p>Upload audio file here.</p>
-            {/* Later: input for audio upload and transcript display */}
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleAudioChange}
+            />
+            {audioFile && (
+              <div style={{ marginTop: '10px' }}>
+                <p><strong>Selected File:</strong> {audioFile.name}</p>
+                <p><strong>Size:</strong> {(audioFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+              </div>
+            )}
+            {/* Later: Transcription output will appear here */}
           </div>
         );
       case 'Image Analysis':
@@ -21,7 +39,6 @@ function PlaygroundPage() {
           <div>
             <h3>Image Analysis</h3>
             <p>Upload image here.</p>
-            {/* Later: image upload and description */}
           </div>
         );
       case 'Document Summarization':
@@ -29,7 +46,6 @@ function PlaygroundPage() {
           <div>
             <h3>Document / URL Summarization</h3>
             <p>Upload document (PDF/DOC) or enter URL here.</p>
-            {/* Later: file/URL input and summary output */}
           </div>
         );
       default:
@@ -44,10 +60,13 @@ function PlaygroundPage() {
         <button onClick={logout}>Logout</button>
       </header>
 
-      {/* Skill Dropdown */}
       <select
         value={selectedSkill}
-        onChange={(e) => setSelectedSkill(e.target.value)}
+        onChange={(e) => {
+          setSelectedSkill(e.target.value);
+          // Clear selected file if changing skill
+          setAudioFile(null);
+        }}
         style={{ padding: '8px', fontSize: '16px' }}
       >
         <option value="">-- Select Skill --</option>
@@ -56,7 +75,6 @@ function PlaygroundPage() {
         <option value="Document Summarization">Document Summarization</option>
       </select>
 
-      {/* Skill Section */}
       <div style={{ marginTop: 30 }}>
         {renderSkillSection()}
       </div>

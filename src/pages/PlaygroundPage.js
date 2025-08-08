@@ -4,14 +4,30 @@ import { useAuth } from '../context/AuthContext';
 function PlaygroundPage() {
   const { user, logout } = useAuth();
   const [selectedSkill, setSelectedSkill] = useState('');
-  
+
   // State for audio file in Conversation Analysis
   const [audioFile, setAudioFile] = useState(null);
+  const [processing, setProcessing] = useState(false);
+  const [transcript, setTranscript] = useState('');
 
   const handleAudioChange = (e) => {
     if (e.target.files.length > 0) {
       setAudioFile(e.target.files[0]);
+      setTranscript(''); // clear old transcript on new file select
     }
+  };
+
+  const handleProcessAudio = () => {
+    if (!audioFile) return;
+
+    setProcessing(true);
+    setTranscript('');
+
+    // Simulate API call delay
+    setTimeout(() => {
+      setTranscript('This is a simulated transcription of the uploaded audio.');
+      setProcessing(false);
+    }, 3000);
   };
 
   const renderSkillSection = () => {
@@ -24,14 +40,27 @@ function PlaygroundPage() {
               type="file"
               accept="audio/*"
               onChange={handleAudioChange}
+              disabled={processing}
             />
             {audioFile && (
               <div style={{ marginTop: '10px' }}>
                 <p><strong>Selected File:</strong> {audioFile.name}</p>
                 <p><strong>Size:</strong> {(audioFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                <button
+                  onClick={handleProcessAudio}
+                  disabled={processing}
+                  style={{ marginTop: '10px', padding: '8px 16px' }}
+                >
+                  {processing ? 'Processing...' : 'Process Audio'}
+                </button>
               </div>
             )}
-            {/* Later: Transcription output will appear here */}
+            {transcript && (
+              <div style={{ marginTop: '20px' }}>
+                <h4>Transcript</h4>
+                <p>{transcript}</p>
+              </div>
+            )}
           </div>
         );
       case 'Image Analysis':
@@ -64,8 +93,10 @@ function PlaygroundPage() {
         value={selectedSkill}
         onChange={(e) => {
           setSelectedSkill(e.target.value);
-          // Clear selected file if changing skill
+          // Clear selected files and transcript when skill changes
           setAudioFile(null);
+          setTranscript('');
+          setProcessing(false);
         }}
         style={{ padding: '8px', fontSize: '16px' }}
       >

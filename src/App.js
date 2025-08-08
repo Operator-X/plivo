@@ -1,11 +1,19 @@
 import React from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
+import PlaygroundPage from './pages/PlaygroundPage';
+
+function AppContent() {
+  const { user } = useAuth();
+
+  return user ? <PlaygroundPage /> : <LoginPage />;
+}
 
 function App() {
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <h1>Welcome to My Sample React App</h1>
-      <p>This is a basic React application deployed on Vercel.</p>
-    </div>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

@@ -17,6 +17,10 @@ function PlaygroundPage() {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState(null);
 
+  // Image Analysis states for Step 4.1 (UI for upload and preview)
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
   // Diarized transcript array: [{speaker:1 or 2, text: string}]
   const [diarizedTranscript, setDiarizedTranscript] = useState([]);
 

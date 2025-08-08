@@ -74,6 +74,17 @@ function PlaygroundPage() {
       setProcessing(false);
     }
   };
+  // Image Analysis Step 4.1: Handler for image file upload and preview generation
+  const handleImageChange = (e) => {
+    if (e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+    } else {
+      setImageFile(null);
+      setImagePreviewUrl(null);
+    }
+  };
 
   // Simple Diarization Logic: Split transcript into sentences, alternate speakers
   const performSimpleDiarization = (text) => {
@@ -159,9 +170,26 @@ function PlaygroundPage() {
         return (
           <div>
             <h3>Image Analysis</h3>
-            <p>Upload image here.</p>
+            <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+            />
+            {imageFile && (
+              <div style={{ marginTop: '10px' }}>
+                {/* Image preview */}
+                <img
+                    src={imagePreviewUrl}
+                    alt="Uploaded preview"
+                    style={{ maxWidth: '300px', maxHeight: '300px', display: 'block', marginBottom: '10px' }}
+                />
+                <p><strong>Filename:</strong> {imageFile.name}</p>
+                <p><strong>Size:</strong> {(imageFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+              </div>
+            )}
           </div>
         );
+          
       case 'Document Summarization':
         return (
           <div>
@@ -182,6 +210,10 @@ function PlaygroundPage() {
     setError(null);
     setProcessing(false);
     if (pollingInterval.current) clearInterval(pollingInterval.current);
+
+    setImageFile(null);
+    setImagePreviewUrl(null);
+
   };
 
   return (
